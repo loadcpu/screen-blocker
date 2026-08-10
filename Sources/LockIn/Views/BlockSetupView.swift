@@ -11,7 +11,7 @@ private let timerSelectionHeight: CGFloat = 122
 private let presetCardSize = CGSize(width: 158, height: 186)
 private let presetGridSpacing: CGFloat = 16
 private let presetGridWidth: CGFloat = 506
-private let presetGridHeight: CGFloat = 230
+private let presetGridHeight: CGFloat = 388
 private let presetCardCornerRadius: CGFloat = 16
 private enum TimerField: Hashable {
     case hours
@@ -237,8 +237,6 @@ struct BlockSetupView: View {
                 }
                 .frame(width: presetGridWidth, height: presetGridHeight)
             }
-
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 24)
         .padding(.top, 52)
@@ -588,7 +586,7 @@ struct BlockSetupView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
         .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.bottom, 8)
         .appWindowSurface()
     }
 
@@ -987,8 +985,8 @@ struct BlockSetupView: View {
     }
 
     private func addSelectedMinutesToRecents() {
-        guard selectedMinutes > 0, !timerPresetOptions.contains(selectedMinutes) else { return }
-        let updated = Self.normalizedTimerPresets(timerPresetOptions + [selectedMinutes])
+        guard selectedMinutes > 0 else { return }
+        let updated = Self.normalizedTimerPresets([selectedMinutes] + timerPresetOptions)
         service.updateTimerPresets(updated)
     }
 
@@ -1157,7 +1155,6 @@ struct BlockSetupView: View {
                     result.append(minutes)
                 }
             }
-            .sorted()
         return cleaned.isEmpty ? defaultTimerPresets : cleaned
     }
 
