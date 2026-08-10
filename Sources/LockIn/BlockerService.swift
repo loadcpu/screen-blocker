@@ -471,6 +471,11 @@ final class BlockerService: ObservableObject {
         window.makeKey()
     }
 
+    private func isAutomationPermissionError(_ error: NSDictionary) -> Bool {
+        guard let number = error[NSAppleScript.errorNumber] as? Int else { return false }
+        return number == -1743
+    }
+
     private func openAutomationSystemSettings() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") else { return }
         NSWorkspace.shared.open(url)
@@ -481,6 +486,7 @@ final class BlockerService: ObservableObject {
     private enum BrowserWindowQueryResult {
         case windows([(index: Int, domain: String)])
         case noWindows
+        case permissionDenied
         case failed
     }
 
@@ -505,11 +511,18 @@ final class BlockerService: ObservableObject {
                 }
             case .noWindows:
                 continue
-            case .failed:
+            case .permissionDenied:
+                handleBrowserAutomationPermissionDenied(bundleID: browser.bundleID)
                 if isBlocking {
                     _ = forceQuitBrowsers(bundleIDs: [browser.bundleID])
                     notifyBrowserForceQuit(browser.name)
                 }
+            case .failed:
+                // Transient AppleScript/AppleEvent failure (e.g. the browser was momentarily
+                // busy or not yet ready to respond) — not a permission problem, so don't force
+                // quit the browser or claim Automation access is missing. It'll be re-checked
+                // on the next tick.
+                NSLog("LockIn: %@ window-tab query transiently failed; will retry", browser.name)
             }
         }
 
@@ -556,7 +569,7 @@ final class BlockerService: ObservableObject {
         let result = NSAppleScript(source: script)?.executeAndReturnError(&err)
         if let err {
             NSLog("LockIn: %@ window-tab query error: %@", browser.name, err)
-            return .failed
+            return isAutomationPermissionError(err) ? .permissionDenied : .failed
         }
 
         guard let output = result?.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
