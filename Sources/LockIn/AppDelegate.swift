@@ -281,27 +281,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     @objc private func startBlocking() {
         guard !BlockerService.shared.isBlocking else { return }
-        blockSetupWC = makeHostingWindow(
-            rootView: BlockSetupView(
-                onStart: { [weak self] minutes, apps, websites in
-                    BlockerService.shared.startSession(minutes: minutes, apps: apps, websites: websites)
-                    self?.blockSetupWC?.close()
-                    self?.blockSetupWC = nil
-                },
-                onCancel: { [weak self] in
-                    self?.blockSetupWC?.close()
-                    self?.blockSetupWC = nil
-                }
-            ),
-            title: "Start Focus Session",
-            size: NSSize(width: 560, height: 660),
-            style: [.titled, .closable, .fullSizeContentView]
-        ) { win, hosting in
-            hosting.autoresizingMask = [.width, .height]
-            win.titlebarAppearsTransparent = true
-            win.isMovableByWindowBackground = true
+
+        if blockSetupWC == nil {
+            blockSetupWC = makeHostingWindow(
+                rootView: BlockSetupView(
+                    onStart: { [weak self] minutes, apps, websites in
+                        BlockerService.shared.startSession(minutes: minutes, apps: apps, websites: websites)
+                        self?.blockSetupWC?.close()
+                        self?.blockSetupWC = nil
+                    },
+                    onCancel: { [weak self] in
+                        self?.blockSetupWC?.close()
+                        self?.blockSetupWC = nil
+                    }
+                ),
+                title: "Start Focus Session",
+                size: NSSize(width: 560, height: 660),
+                style: [.titled, .closable, .fullSizeContentView]
+            ) { win, hosting in
+                hosting.autoresizingMask = [.width, .height]
+                win.titlebarAppearsTransparent = true
+                win.isMovableByWindowBackground = true
+            }
+            if let window = blockSetupWC?.window { trackWindowLifecycle(window) }
         }
-        if let window = blockSetupWC?.window { trackWindowLifecycle(window) }
         NSApp.setActivationPolicy(.regular)
         blockSetupWC?.showWindow(nil)
     }
