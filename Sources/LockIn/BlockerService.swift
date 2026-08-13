@@ -196,7 +196,8 @@ final class BlockerService: ObservableObject {
 
     private func endSession() {
         if let s = session {
-            FocusStore.shared.record(duration: s.endTime.timeIntervalSince(s.startTime))
+            FocusStore.shared.record(duration: s.endTime.timeIntervalSince(s.startTime),
+                                     start: s.startTime, end: s.endTime)
         }
         // The session-end notification was pre-scheduled at startSession() and is
         // held by the system daemon — no XPC call needed here during the SIGTERM race.

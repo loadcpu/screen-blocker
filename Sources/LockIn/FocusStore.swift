@@ -3,6 +3,10 @@ import Foundation
 private struct FocusEntry: Codable {
     let date: String
     let duration: TimeInterval
+    // when the session actually ran; optional so lines written before these
+    // fields existed still decode
+    let start: Date?
+    let end: Date?
 }
 
 final class FocusStore {
@@ -22,10 +26,10 @@ final class FocusStore {
         return dir
     }
 
-    func record(duration: TimeInterval) {
+    func record(duration: TimeInterval, start: Date? = nil, end: Date? = nil) {
         guard duration > 0 else { return }
         let dateStr = fmt.string(from: Date())
-        let entry = FocusEntry(date: dateStr, duration: duration)
+        let entry = FocusEntry(date: dateStr, duration: duration, start: start, end: end)
         queue.async {
             guard let data = try? JSONEncoder().encode(entry),
                   let line = String(data: data, encoding: .utf8) else { return }
